@@ -13,96 +13,120 @@ namespace QueueTest
     /// </summary>
     class Program
     {
-        static uint simulationTime = 60 * 60 * 8; // Length of time to be simulated in seconds
+        static uint simulationTime = 60 * 60 * 9 * 21 * 12; // Length of time to be simulated in seconds
         static double avgServiceTime = 5.00d; // Average time needed to service a request in seconds
-        static double avgRequestRate = 10000000d / (60 * 60 * 8 * 22); // Average requests per second
+        // static double avgRequestRate = (900000d * 2d) / (60 * 60 * 9 * 21); // Average requests per second
+
+        static uint requestsPerMonthMin = 200000000;
+        static uint requestsPerMonthMax = 500000000;
+        static uint requestsPerMonthStep = 10000000;
 
         // Assuming Servers in Round-Robin Configuration
         static uint serverCount = 1; // Number of servers used in simulation
-        static uint serverCapacity = 150; // Number of simulataneous requests a server can handle
+        static uint serverCapacity = 5816; // Number of simulataneous requests a server can handle
 
         static void Main(string[] args)
         {
-            // Initialize a Matrix Representing Available Capacity
-            List<double>[] serverUsage = new List<double>[serverCount];
-            for (int i = 0; i < serverCount; i++) {
-                serverUsage[i] = new List<double>();
-            }
-
-            // Initialize Request Distributions
-            Poisson arrivalDist = new Poisson(avgRequestRate);
-
-            // Initialize Variables for Simulating Round-Robin Load Balancing
-            int nextServerToUse = 0; // Next Server to Receive a Request
-            
-            // Initialize Measurement Variables
-            int requestsRejectedByServer = 0;
-            int totalRequestsInSimulation = 0;
-
-            // Iterate through Simulation Rounds
-            for(int round = 0; round < simulationTime; round++)
+            for (uint requestCount = requestsPerMonthMin; requestCount < requestsPerMonthMax; requestCount += requestsPerMonthStep)
             {
-                // Add New Requests to the Servers
-                int requestsThisRound = arrivalDist.Sample();
-                totalRequestsInSimulation += requestsThisRound;
-                for(int request = 0; request < requestsThisRound; request++)
-                {
-                    // Determine if the Next Server can handle the Request
-                    double requestServiceTime = avgServiceTime;
-                    if(serverUsage[nextServerToUse].Count >= serverCapacity) {
-                        requestsRejectedByServer++;
-                    } else {
-                        serverUsage[nextServerToUse].Add(requestServiceTime);
-                    }
+                double avgRequestRate = (requestCount * 2d) / (60 * 60 * 9 * 21); // Average requests per second
 
-                    // Use Round-Robin to Select Next Server
-                    if(nextServerToUse == serverCount - 1) {
-                        nextServerToUse = 0;
-                    } else {
-                        nextServerToUse++;
-                    }
+                // Initialize a Matrix Representing Available Capacity
+                List<double>[] serverUsage = new List<double>[serverCount];
+                for (int i = 0; i < serverCount; i++)
+                {
+                    serverUsage[i] = new List<double>();
                 }
 
-                for (int server = 0; server < serverCount; server++) {
-                    // Calculate Remaining Time needed for Requests
-                    for (int request = 0; request < serverUsage[server].Count; request++)
-                    {
-                        serverUsage[server][request] -= 1d;
-                    }
+                // Initialize Request Distributions
+                Poisson arrivalDist = new Poisson(avgRequestRate);
 
-                    // Remove Completed Requests from the Servers
-                    serverUsage[server].RemoveAll(requestTime => requestTime <= 0);
-                }
+                // Initialize Variables for Simulating Round-Robin Load Balancing
+                int nextServerToUse = 0; // Next Server to Receive a Request
 
-                // Render Output
-                if (round % (int)Math.Round(simulationTime / 10000d) == 0)
+                // Initialize Measurement Variables
+                int requestsRejectedByServer = 0;
+                int totalRequestsInSimulation = 0;
+
+                // Iterate through Simulation Rounds
+                for (int round = 0; round < simulationTime; round++)
                 {
-                    Console.SetCursorPosition(0, 0);
-                    Console.ResetColor();
-                    Console.WriteLine("Round {0}/{1} ({2}%)", round, simulationTime, 
-                        Math.Round((double)round * 100d / (double)simulationTime, 2));
-                    for (int server = 0; server < serverCount; server++)
+                    // Add New Requests to the Servers
+                    int requestsThisRound = arrivalDist.Sample();
+                    totalRequestsInSimulation += requestsThisRound;
+                    for (int request = 0; request < requestsThisRound; request++)
                     {
-                        if (serverUsage[server].Count >= serverCapacity)
+                        // Determine if the Next Server can handle the Request
+                        double requestServiceTime = avgServiceTime;
+                        if (serverUsage[nextServerToUse].Count >= serverCapacity)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
+                            requestsRejectedByServer++;
                         }
                         else
                         {
-                            Console.ForegroundColor = ConsoleColor.Green;
+                            serverUsage[nextServerToUse].Add(requestServiceTime);
                         }
 
-                        Console.WriteLine("Server {0}: [{1}]", server.ToString(), 
-                            String.Empty
-                            .PadRight(serverUsage[server].Count, '|')
-                            .PadRight((int)serverCapacity));
+                        // Use Round-Robin to Select Next Server
+                        if (nextServerToUse == serverCount - 1)
+                        {
+                            nextServerToUse = 0;
+                        }
+                        else
+                        {
+                            nextServerToUse++;
+                        }
+                    }
+
+                    for (int server = 0; server < serverCount; server++)
+                    {
+                        // Calculate Remaining Time needed for Requests
+                        for (int request = 0; request < serverUsage[server].Count; request++)
+                        {
+                            serverUsage[server][request] -= 1d;
+                        }
+
+                        // Remove Completed Requests from the Servers
+                        serverUsage[server].RemoveAll(requestTime => requestTime <= 0);
+                    }
+
+                    // Render Output
+                    if (round % (int)Math.Round(simulationTime / 10d) == 0)
+                    {
+                        Console.SetCursorPosition(0, 0);
+                        Console.ResetColor();
+                        Console.WriteLine("Round {0}/{1} ({2}%)", round, simulationTime,
+                            Math.Round((double)round * 100d / (double)simulationTime, 2));
+                        for (int server = 0; server < serverCount; server++)
+                        {
+                            if (serverUsage[server].Count >= serverCapacity)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                            }
+                            else
+                            {
+                                Console.ForegroundColor = ConsoleColor.Green;
+                            }
+
+                            Console.WriteLine("Server {0}: [{1}]", server.ToString(),
+                                String.Empty
+                                .PadRight(serverUsage[server].Count, '|')
+                                .PadRight((int)serverCapacity));
+                        }
                     }
                 }
-            }
 
-            Console.WriteLine("Simulated Request Count: " + totalRequestsInSimulation);
-            Console.WriteLine("Requests Rejected By Server: " + requestsRejectedByServer);
-            Console.ReadKey(true);
+                Console.WriteLine("Testing Monthly Request Count: " + requestCount);
+                Console.WriteLine("Simulated Request Count: " + totalRequestsInSimulation);
+                Console.WriteLine("Requests Rejected By Server: " + requestsRejectedByServer);
+                if (requestsRejectedByServer > 0)
+                {
+                    Console.WriteLine("Found a Rejection at {0} Requests/Mo.", requestCount);
+                    Console.ReadKey(true);
+                }
+                totalRequestsInSimulation = requestsRejectedByServer = 0;
+                // Console.ReadKey(true);
+            }
         }
     }
 }
