@@ -10,11 +10,11 @@ All parameters are configurable from within Program.cs
 Program flow and logic are illustrated in the repo as PoissonQueuing.pdf
 
 Things to do:
-- Convert console app to and interactive app
-- Accept input for 
-    - average service time
-    - simulation time
-    - requests per month
-    - number of servers
-    - simultaneous connections
-    - arrival rate
+* Convert console app to and interactive app
+* Accept input for 
+    * average service time
+    * simulation time
+    * requests per month
+    * number of servers
+    * simultaneous connections
+    * arrival rate
