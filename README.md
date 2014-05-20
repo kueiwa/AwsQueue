@@ -12,9 +12,10 @@ Program flow and logic are illustrated in the repo as PoissonQueuing.pdf
 Things to do:
 - Convert console app to and interactive app
 - Accept input for 
-    - average service time
-    - simulation time
-    - requests per month
-    - number of servers
-    - simultaneous connections
-    - arrival rate
+  - average service time
+  - simulation time
+  - requests per month
+  - number of servers
+  - simultaneous connections
+  - arrival rate
+
